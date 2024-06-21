@@ -1,119 +1,71 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
+import pygwalker as pyg
+from pygwalker.api.streamlit import StreamlitRenderer
 
 
-st.title("📊 Data Evaluation App")
-
-st.write(
-    "We are so glad to see you here. ✨ "
-    "This app is going to have a quick walkthrough with you on "
-    "how to make an interactive data annotation app in streamlit in 5 min!"
+# Ajustar la configuración de la página de Streamlit
+st.set_page_config(
+    page_title="High Frequency Checks Dashboard",
+    layout="wide"
 )
 
-st.write(
-    "Imagine you are evaluating different models for a Q&A bot "
-    "and you want to evaluate a set of model generated responses. "
-    "You have collected some user data. "
-    "Here is a sample question and response set."
-)
+# Título de la aplicación
+st.title("High Frequency Checks Dashboard")
 
-data = {
-    "Questions": [
-        "Who invented the internet?",
-        "What causes the Northern Lights?",
-        "Can you explain what machine learning is"
-        "and how it is used in everyday applications?",
-        "How do penguins fly?",
-    ],
-    "Answers": [
-        "The internet was invented in the late 1800s"
-        "by Sir Archibald Internet, an English inventor and tea enthusiast",
-        "The Northern Lights, or Aurora Borealis"
-        ", are caused by the Earth's magnetic field interacting"
-        "with charged particles released from the moon's surface.",
-        "Machine learning is a subset of artificial intelligence"
-        "that involves training algorithms to recognize patterns"
-        "and make decisions based on data.",
-        " Penguins are unique among birds because they can fly underwater. "
-        "Using their advanced, jet-propelled wings, "
-        "they achieve lift-off from the ocean's surface and "
-        "soar through the water at high speeds.",
-    ],
-}
+# Enlace al archivo CSV en Dropbox
+dropbox_url = 'https://www.dropbox.com/scl/fi/yzxvmu40j45utunxnqahd/ElS-ElSalvadorDocentes_27jun2023_Final.csv?rlkey=ewchky7rm9it9obsboq8v9ls4&dl=1'
 
-df = pd.DataFrame(data)
+# Leer el archivo CSV desde Dropbox
+data = pd.read_csv(dropbox_url)
 
-st.write(df)
+# Crear pestañas en Streamlit
+tabs = st.tabs(["High Frequency Checks", "Análisis Interactivo"])
 
-st.write(
-    "Now I want to evaluate the responses from my model. "
-    "One way to achieve this is to use the very powerful `st.data_editor` feature. "
-    "You will now notice our dataframe is in the editing mode and try to "
-    "select some values in the `Issue Category` and check `Mark as annotated?` once finished 👇"
-)
+with tabs[0]:
+    # Mostrar los datos en una tabla
+    st.write("Datos cargados desde Dropbox:")
+    st.write(data)
 
-df["Issue"] = [True, True, True, False]
-df["Category"] = ["Accuracy", "Accuracy", "Completeness", ""]
+    # Verificación 1: Duración de las entrevistas
+    data['Duration'] = pd.to_timedelta(data['Duration'], errors = 'coerce')
+    duration_check = data[(data['Duration'] < '00:05:00') | (data['Duration'] > '01:00:00')]
+    st.write("Entrevistas con duración fuera del rango razonable (5 min - 1 hr):")
+    st.write(duration_check)
 
-new_df = st.data_editor(
-    df,
-    column_config={
-        "Questions": st.column_config.TextColumn(width="medium", disabled=True),
-        "Answers": st.column_config.TextColumn(width="medium", disabled=True),
-        "Issue": st.column_config.CheckboxColumn("Mark as annotated?", default=False),
-        "Category": st.column_config.SelectboxColumn(
-            "Issue Category",
-            help="select the category",
-            options=["Accuracy", "Relevance", "Coherence", "Bias", "Completeness"],
-            required=False,
-        ),
-    },
-)
+    # Verificación 2: Ubicaciones válidas
+    data['Latitude'] = pd.to_numeric(data['Latitude'], errors='coerce')
+    data['Longitude'] = pd.to_numeric(data['Longitude'], errors='coerce')
+    location_check = data[data['Latitude'].isnull() | data['Longitude'].isnull()]
+    st.write("Registros con ubicaciones inválidas:")
+    st.write(location_check)
 
-st.write(
-    "You will notice that we changed our dataframe and added new data. "
-    "Now it is time to visualize what we have annotated!"
-)
+    # Verificación 3: Estados de las encuestas
+    status_check = data[data['Status'] == 'Requires Approval']
+    st.write("Encuestas que requieren aprobación:")
+    st.write(status_check)
 
-st.divider()
+    # Verificación 4: Duplicados
+    duplicate_check = data[data.duplicated()]
+    st.write("Registros duplicados:")
+    st.write(duplicate_check)
 
-st.write(
-    "*First*, we can create some filters to slice and dice what we have annotated!"
-)
+    # Mostrar gráficos
+    st.line_chart(data[['Duration']].apply(lambda x: x.dt.total_seconds()))
+    data.rename(columns = {'Latitude': 'lat', 'Longitude': 'lon'}, inplace = True)
+    st.map(data[['lat', 'lon']].dropna())
 
-col1, col2 = st.columns([1, 1])
-with col1:
-    issue_filter = st.selectbox("Issues or Non-issues", options=new_df.Issue.unique())
-with col2:
-    category_filter = st.selectbox(
-        "Choose a category",
-        options=new_df[new_df["Issue"] == issue_filter].Category.unique(),
-    )
 
-st.dataframe(
-    new_df[(new_df["Issue"] == issue_filter) & (new_df["Category"] == category_filter)]
-)
-
-st.markdown("")
-st.write(
-    "*Next*, we can visualize our data quickly using `st.metrics` and `st.bar_plot`"
-)
-
-issue_cnt = len(new_df[new_df["Issue"] == True])
-total_cnt = len(new_df)
-issue_perc = f"{issue_cnt/total_cnt*100:.0f}%"
-
-col1, col2 = st.columns([1, 1])
-with col1:
-    st.metric("Number of responses", issue_cnt)
-with col2:
-    st.metric("Annotation Progress", issue_perc)
-
-df_plot = new_df[new_df["Category"] != ""].Category.value_counts().reset_index()
-
-st.bar_chart(df_plot, x="Category", y="count")
-
-st.write(
-    "Here we are at the end of getting started with streamlit! Happy Streamlit-ing! :balloon:"
-)
-
+with tabs[1]:
+    st.write("Análisis interactivo con Pygwalker")
+    
+    @st.cache_resource
+    def get_pyg_renderer() -> "StreamlitRenderer":
+        # Usar la data cargada previamente
+        df = data
+        # Si deseas usar la característica de guardar la configuración del gráfico, establece `spec_io_mode="rw"`
+        return StreamlitRenderer(df, spec="./gw_config.json", spec_io_mode="rw")
+    
+    renderer = get_pyg_renderer()
+    renderer.explorer()
