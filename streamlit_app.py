@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pygwalker as pyg
-from pygwalker.api.streamlit import StreamlitRenderer
+
 
 
 # Ajustar la configuración de la página de Streamlit
@@ -57,15 +56,3 @@ with tabs[0]:
     st.map(data[['lat', 'lon']].dropna())
 
 
-with tabs[1]:
-    st.write("Análisis interactivo con Pygwalker")
-    
-    @st.cache_resource
-    def get_pyg_renderer() -> "StreamlitRenderer":
-        # Usar la data cargada previamente
-        df = data
-        # Si deseas usar la característica de guardar la configuración del gráfico, establece `spec_io_mode="rw"`
-        return StreamlitRenderer(df, spec="./gw_config.json", spec_io_mode="rw")
-    
-    renderer = get_pyg_renderer()
-    renderer.explorer()
