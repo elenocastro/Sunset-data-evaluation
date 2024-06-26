@@ -17,7 +17,7 @@ st.title("High Frequency Checks Dashboard")
 dropbox_url = 'https://www.dropbox.com/scl/fi/pswt5c75c2o2v0csix4mr/EGRA.csv?rlkey=0qzi3sjcs4oklsuncamhz1xt7&dl=1'
 
 # Leer el archivo CSV desde Dropbox
-@st.cache_data
+# @st.cache_data
 def load_data(url):
     data = pd.read_csv(url)
     return data
