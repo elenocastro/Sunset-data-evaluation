@@ -117,7 +117,7 @@ for i, section in enumerate(sections.keys(), 3):
 
 # Nueva pestaña para Resultados Finales
 with tabs[2]:
-    st.write("Análisis Descriptivo de Variables '_score'")
+    st.write("Análisis Descriptivo de Variables")
     
     # Filtrar variables que contienen '_score'
     score_variables = [col for col in data.columns if '_score' in col]
@@ -126,9 +126,10 @@ with tabs[2]:
     descriptive_stats = display_descriptive_stats(data, score_variables)
     st.write("Tabla Descriptiva:")
     st.write(descriptive_stats)
-    
+    st.write("Score = Items identified - Incorrect items/(duration - time remaining)/duration")
+
     # Generar gráficos para las variables '_score'
-    st.write("Gráficos de Variables '_score':")
+    st.write("Gráficos de Variables")
     num_vars = len(score_variables)
     fig, axes = plt.subplots(nrows=num_vars, ncols=2, figsize=(12, num_vars * 6))
     
