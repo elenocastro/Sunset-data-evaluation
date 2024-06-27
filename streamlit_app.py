@@ -72,7 +72,7 @@ with tabs[0]:
     st.write(duration_check[col])
 
     # Verificación 2: Duplicados
-    duplicate_check = data[data.duplicated()]
+    duplicate_check = data[data.id_estudiante_nie.duplicated(keep = False)]
     st.write("Registros duplicados:")
     st.write(duplicate_check[col])
 
