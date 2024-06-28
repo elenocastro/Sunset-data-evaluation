@@ -38,7 +38,7 @@ sections = {
     "Palabras No Reales": [f'nonwords_{i}' for i in range(1, 71)] + ['nonwords_999', 'nonwords_time', 'nonwords_attempted', 'nonwords_incorrect', 'nonwords_correct', 'nonwords_score'],
     "Lectura Oral": [f'reading_{i}' for i in range(1, 149)] + ['reading_999', 'reading_time', 'reading_attempted', 'reading_incorrect', 'reading_correct', 'reading_sentences', 'reading_score'],
     "Comprensión Oral": ['oral_comprehension_1', 'oral_comprehension_2', 'oral_comprehension_3', 'oral_comprehension_4', 'oral_comprehension_5', 'oral_comprehension_6', 'oral_comprehension_7', 'oral_comprehension_8', 'oral_comprehension_9', 'oral_comprehension_10', 'oral_comprehension_11'],
-    "Comprensión Lectora": ['comprehension_1', 'comprehension_2', 'comprehension_3', 'comprehension_4', 'comprehension_5'],
+    "Comprensión Lectora": ['comprehension_1', 'comprehension_2', 'comprehension_3', 'comprehension_4', 'comprehension_5', 'comprehension_6', 'comprehension_7', 'comprehension_8', 'comprehension_9', 'comprehension_10'],
     "Contexto del Estudiante": [col for col in data.columns if col.startswith('context_est_')]
 }
 
