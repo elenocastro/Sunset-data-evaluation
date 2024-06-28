@@ -38,6 +38,7 @@ sections = {
     "Palabras No Reales": [f'nonwords_{i}' for i in range(1, 71)] + ['nonwords_999', 'nonwords_time', 'nonwords_attempted', 'nonwords_incorrect', 'nonwords_correct', 'nonwords_score'],
     "Lectura Oral": [f'reading_{i}' for i in range(1, 149)] + ['reading_999', 'reading_time', 'reading_attempted', 'reading_incorrect', 'reading_correct', 'reading_sentences', 'reading_score'],
     "Comprensión Oral": ['oral_comprehension_1', 'oral_comprehension_2', 'oral_comprehension_3', 'oral_comprehension_4', 'oral_comprehension_5', 'oral_comprehension_6', 'oral_comprehension_7', 'oral_comprehension_8', 'oral_comprehension_9', 'oral_comprehension_10', 'oral_comprehension_11'],
+    "Comprensión Lectora": ['comprehension_1', 'comprehension_2', 'comprehension_3', 'comprehension_4', 'comprehension_5'],
     "Contexto del Estudiante": [col for col in data.columns if col.startswith('context_est_')]
 }
 
@@ -110,7 +111,7 @@ for i, section in enumerate(sections.keys(), 3):
 
         # Mostrar tabla de porcentajes para variables categóricas con menos de 5 categorías
         if section in ["Fonológica Parte 1", "Fonológica Parte 2", "Fonológica Parte 3", 'Letras',
-                       "Palabras No Reales", "Lectura Oral", "Comprensión Oral"]:
+                       "Palabras No Reales", "Lectura Oral", "Comprensión Oral", 'Comprensión Lectora']:
             category_counts = display_category_percentages(data, variables)
             st.write("Porcentajes de respuestas categóricas:")
             st.write(category_counts)
@@ -126,23 +127,34 @@ with tabs[2]:
     descriptive_stats = display_descriptive_stats(data, score_variables)
     st.write("Tabla Descriptiva:")
     st.write(descriptive_stats)
-    st.write("Score = Items identified - Incorrect items/(duration - time remaining)/duration")
+    st.write("Score = Items identified - Incorrect items/(time used)/total time possible")
 
     # Generar gráficos para las variables '_score'
     st.write("Gráficos de Variables")
     num_vars = len(score_variables)
-    fig, axes = plt.subplots(nrows=num_vars, ncols=2, figsize=(12, num_vars * 6))
+    fig, axes = plt.subplots(nrows=num_vars, ncols=2, figsize=(15, num_vars * 6))
+    
+    bins = [-float('inf'), 0.00001] + list(range(20, 121, 20)) + [float('inf')]
+    bin_labels = ['<=0'] + [f'{i+1}-{i+20}' for i in range(0, 120, 20)] + ['>120']
     
     for idx, var in enumerate(score_variables):
-        sns.histplot(data[var], bins=20, kde=True, ax=axes[idx, 0])
-        axes[idx, 0].set_title(f"Distribución de {var}")
+        data[var + '_binned'] = pd.cut(data[var], bins=bins, labels=bin_labels, include_lowest=True)
         
+        # Histogram
+        counts, _ = np.histogram(data[var], bins=bins)
+        counts_perc = counts / counts.sum() * 100
+        
+        sns.barplot(x=bin_labels, y=counts_perc, ax=axes[idx, 0])
+        axes[idx, 0].set_title(f"Distribución de {var} (porcentaje)")
+        axes[idx, 0].set_ylabel('Porcentaje')
+        
+        # Boxplot
         sns.boxplot(data[var], ax=axes[idx, 1])
         axes[idx, 1].set_title(f"Caja y Bigotes de {var}")
     
     plt.tight_layout()
     st.pyplot(fig)
-    
+
     st.write("Análisis Descriptivo de las Partes Fonológicas")
     
     # Sumar los puntos de cada parte fonológica
@@ -160,10 +172,39 @@ with tabs[2]:
     # Generar gráficos para las partes fonológicas
     st.write("Gráficos de las Partes Fonológicas:")
     num_fonologica_vars = len(fonologica_totals)
-    fig, axes = plt.subplots(nrows=num_fonologica_vars, ncols=2, figsize=(12, num_fonologica_vars * 6))
+    fig, axes = plt.subplots(nrows=num_fonologica_vars,  ncols=2, figsize=(15, num_fonologica_vars * 6))
     
     for idx, var in enumerate(fonologica_totals):
-        sns.histplot(data[var], bins=20, kde=True, ax=axes[idx, 0])
+        sns.histplot(data[var], stat='percent', bins=6, kde=True, ax=axes[idx, 0])
+        axes[idx, 0].set_title(f"Distribución de {var}")
+        
+        sns.boxplot(data[var], ax=axes[idx, 1])
+        axes[idx, 1].set_title(f"Caja y Bigotes de {var}")
+    
+    plt.tight_layout()
+    st.pyplot(fig)
+
+
+    st.write("Análisis Descriptivo de las Partes Fonológicas")
+    
+    # Sumar los puntos de cada parte fonológica
+    data['compresion_lectora'] = (data[sections['Comprensión Lectora']] == 1).sum(axis=1)
+    data['compresion_oral'] = (data[sections['Comprensión Oral']] == 1).sum(axis=1)
+    
+    comprension_totals = ['compresion_lectora', 'compresion_oral']
+    
+    # Tabla descriptiva para las partes fonológicas
+    comprension_descriptive_stats = display_descriptive_stats(data, comprension_totals)
+    st.write("Tabla Descriptiva de las Partes de Compresión:")
+    st.write(comprension_descriptive_stats)
+    
+    # Generar gráficos para las partes fonológicas
+    st.write("Gráficos de las Partes Comprensión:")
+    num_comprension_vars = len(comprension_totals)
+    fig, axes = plt.subplots(nrows=num_comprension_vars, ncols=2, figsize=(15, num_fonologica_vars * 6))
+    
+    for idx, var in enumerate(comprension_totals):
+        sns.histplot(data[var], stat='percent', bins=6, kde=True, ax=axes[idx, 0])
         axes[idx, 0].set_title(f"Distribución de {var}")
         
         sns.boxplot(data[var], ax=axes[idx, 1])
